@@ -22,8 +22,9 @@ matrix:
 #  apt: # apt-get for linux
 #    packages:
 #    - gfortran
-#before_script: # homebrew for mac
-#  - if [ $TRAVIS_OS_NAME = osx ]; then brew install gcc; fi
+before_script:
+  # Install unregistered packages
+  - julia -e 'Pkg.clone("https://github.com/tamasgal/WebSocketClient.jl")'
 
 ## uncomment the following lines to override the default test script
 #script:
