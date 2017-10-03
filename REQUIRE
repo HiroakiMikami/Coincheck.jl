@@ -1,3 +1,4 @@
 julia 0.6
 HTTP 0.4.3
 JSON 0.14.0
+Nettle 0.3.0
