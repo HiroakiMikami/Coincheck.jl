@@ -2,6 +2,7 @@ module Coincheck
 
 using HTTP
 using JSON
+using Nettle
 using WebSocketClient
 import WebSocketClient: on_text
 import Requests: URI
@@ -27,6 +28,30 @@ function call_public_api(path, args = Dict())
 end
 function call_public_api(client :: Client, path, args = Dict())
     JSON.parse(get(client, path, args).body)
+end
+
+@enum Method GET POST
+export Method
+
+struct Credential
+    api_key:: String
+    api_secret:: String
+end
+
+export call_private_api
+function call_private_api(client :: Client, credential, method, path, args = Dict())
+    # nonce
+    nonce = string(UInt64(Dates.time() * 1e6))
+    # url
+    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
+    url = (method == GET) ? "$(client.endpoint)/$path$(query == "" ? "" : "?$query")" : "$(client.endpoint)/$path"
+    # body
+    body = (method == GET) ? "" : JSON.json(args)
+
+    message = nonce * url * body
+    signature = Nettle.hexdigest("sha256", credential.api_secret, message)
+    method == GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
+    method == POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
 end
 
 export ChannelType
