@@ -7,22 +7,7 @@ using WebSocketClient
 import WebSocketClient: on_text
 import Requests: URI
 
-struct Client
-    endpoint:: String
-    websocket_endpoint:: String
-end
-export Client
-
-struct Credential
-    access_key:: String
-    secret_key:: String
-end
-export Credential
-
-module Methods
-    @enum Method GET POST
-    export Method
-end
+include("common.jl")
 
 # https://coincheck.com/ja/documents/exchange/api#about
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
