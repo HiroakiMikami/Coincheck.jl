@@ -11,6 +11,13 @@ struct Client
     endpoint:: String
     websocket_endpoint:: String
 end
+export Client
+
+struct Credential
+    access_key:: String
+    secret_key:: String
+end
+export Credential
 
 # https://coincheck.com/ja/documents/exchange/api#about
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
@@ -28,14 +35,6 @@ function call_public_api(path, args = Dict())
 end
 function call_public_api(client :: Client, path, args = Dict())
     JSON.parse(get(client, path, args).body)
-end
-
-@enum Method GET POST
-export Method
-
-struct Credential
-    access_key:: String
-    secret_key:: String
 end
 
 export call_private_api
