@@ -19,6 +19,11 @@ struct Credential
 end
 export Credential
 
+module Methods
+    @enum Method GET POST
+    export Method
+end
+
 # https://coincheck.com/ja/documents/exchange/api#about
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
 default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
@@ -43,14 +48,14 @@ function call_private_api(client :: Client, credential, method, path, args = Dic
     nonce = string(UInt64(Dates.time() * 1e6))
     # url
     query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-    url = (method == GET) ? "$(client.endpoint)/$path$(query == "" ? "" : "?$query")" : "$(client.endpoint)/$path"
+    url = (method == Methods.GET) ? "$(client.endpoint)/$path$(query == "" ? "" : "?$query")" : "$(client.endpoint)/$path"
     # body
-    body = (method == GET) ? "" : JSON.json(args)
+    body = (method == Methods.GET) ? "" : JSON.json(args)
 
     message = nonce * url * body
     signature = Nettle.hexdigest("sha256", credential.secret_key, message)
-    method == GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
-    method == POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
+    method == Methods.GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
+    method == Methods.POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
 end
 
 export ChannelType
