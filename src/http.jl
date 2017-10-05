@@ -16,3 +16,12 @@ function make_http_request(method, url; headers = Nullable(), body = Nullable())
         end
     end
 end
+
+function convert_to_url(client:: Client, path, args = Nullable())
+    if isnull(args)
+        return "$(client.endpoint)/$path"
+    else
+        query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
+        return "$(client.endpoint)/$path?$query"
+    end
+end

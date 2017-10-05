@@ -16,22 +16,20 @@ const default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.c
 include("http.jl")
 
 export call_public_api
-function call_public_api(path, args = Dict())
+function call_public_api(path, args = Nullable())
     call_public_api(default_client, path, args)
 end
-function call_public_api(client :: Client, path, args = Dict())
-    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-    response = make_http_request(Methods.GET, "$(client.endpoint)/$path?$query")
+function call_public_api(client :: Client, path, args = Nullable())
+    response = make_http_request(Methods.GET, convert_to_url(client, path, args))
     JSON.parse(response.body)
 end
 
 export call_private_api
-function call_private_api(client :: Client, credential, method, path, args = Dict())
+function call_private_api(client :: Client, credential, method, path, args = Nullable())
     # nonce
     nonce = string(UInt64(Dates.time() * 1e6))
     # url
-    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-    url = (method == Methods.GET) ? "$(client.endpoint)/$path$(query == "" ? "" : "?$query")" : "$(client.endpoint)/$path"
+    url = (method == Methods.GET) ? convert_to_url(client, path, args) : convert_to_url(client, path)
     # body
     body = (method == Methods.GET) ? "" : JSON.json(args)
 
