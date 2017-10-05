@@ -11,7 +11,7 @@ include("common.jl")
 
 # https://coincheck.com/ja/documents/exchange/api#about
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
-default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
+const default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
 
 include("http.jl")
 
