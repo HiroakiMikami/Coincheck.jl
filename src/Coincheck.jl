@@ -11,7 +11,10 @@ include("common.jl")
 
 # https://coincheck.com/ja/documents/exchange/api#about
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
-const default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
+const default_client = Client(
+    "https://coincheck.com", "wss://ws-api.coincheck.com",
+    WebsocketApiHandler(WSClient(), Channel{Array{Any, 1}}(32))
+)
 
 include("http.jl")
 
@@ -47,58 +50,26 @@ function call_private_api(client :: Client, credential, method, path, args = Nul
     end
 end
 
-export ChannelType
-@enum ChannelType TRADES ORDERBOOK
-
-export Channel
-struct Channel
-    channel_type:: ChannelType
-    pair:: String
-end
-
-function stringify(channel :: Channel)
-    channel.channel_type == TRADES && return "$(channel.pair)-trades"
-    channel.channel_type == ORDERBOOK && return "$(channel.pair)-orderbook"
-end
-
-struct CoincheckApiHandler <: WebSocketHandler
-    client:: WSClient
-    data:: Base.Channel{Tuple{Channel, Array{Any, 1}}}
-end
-on_text(handler ::CoincheckApiHandler, s:: String) = begin
+on_text(handler:: WebsocketApiHandler, s:: String) = begin
     try
-        data = JSON.parse(s)
-
-        if size(data)[1] > 0
-            if isa(data[1], Number)
-                put!(handler.data, (Channel(TRADES, data[2]), data))
-            else
-                put!(handler.data, (Channel(ORDERBOOK, data[1]), data))
-            end
-        end
+        put!(handler.data, JSON.parse(s))
     catch ex
         # TODO error-handling
         println(ex)
     end
 end
-
-export subscribe
 function subscribe(channels)
     subscribe(default_client, channels)
 end
-function subscribe(client :: Client, channels)
-    handler = CoincheckApiHandler(WSClient(), Base.Channel{Tuple{Channel, Array{Any, 1}}}(32))
-
+function subscribe(client:: Client, channels)
     # Connect to Coincheck server
-    wsconnect(handler.client, URI(client.websocket_endpoint), handler)
+    wsconnect(client.websocket_handler.client, URI(client.websocket_endpoint), client.websocket_handler)
 
     # Make requests
     for channel = collect(channels)
-        json = JSON.json(Dict("type" => "subscribe", "channel" => stringify(channel)))
-        send_text(handler.client, json)
+        json = JSON.json(Dict("type" => "subscribe", "channel" => channel))
+        send_text(client.websocket_handler.client, json)
     end
-
-    return handler
 end
 
 end
