@@ -25,6 +25,9 @@ function call_public_api(client :: Client, path, args = Nullable())
 end
 
 export call_private_api
+function call_private_api(credential, method, path, args = Nullable())
+    call_private_api(default_client, credential, method, path, args)
+end
 function call_private_api(client :: Client, credential, method, path, args = Nullable())
     # nonce
     nonce = string(UInt64(Dates.time() * 1e6))
