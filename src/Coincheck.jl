@@ -34,8 +34,8 @@ end
 export Method
 
 struct Credential
-    api_key:: String
-    api_secret:: String
+    access_key:: String
+    secret_key:: String
 end
 
 export call_private_api
@@ -49,9 +49,9 @@ function call_private_api(client :: Client, credential, method, path, args = Dic
     body = (method == GET) ? "" : JSON.json(args)
 
     message = nonce * url * body
-    signature = Nettle.hexdigest("sha256", credential.api_secret, message)
-    method == GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
-    method == POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
+    signature = Nettle.hexdigest("sha256", credential.secret_key, message)
+    method == GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
+    method == POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
 end
 
 export ChannelType
