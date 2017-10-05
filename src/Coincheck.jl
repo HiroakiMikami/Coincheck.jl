@@ -13,18 +13,16 @@ include("common.jl")
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
 default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
 
-function get(client :: Client, path, args)
-    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-
-    HTTP.get("$(client.endpoint)/$path?$query")
-end
+include("http.jl")
 
 export call_public_api
 function call_public_api(path, args = Dict())
     call_public_api(default_client, path, args)
 end
 function call_public_api(client :: Client, path, args = Dict())
-    JSON.parse(get(client, path, args).body)
+    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
+    response = make_http_request(Methods.GET, "$(client.endpoint)/$path?$query")
+    JSON.parse(response.body)
 end
 
 export call_private_api
@@ -39,8 +37,13 @@ function call_private_api(client :: Client, credential, method, path, args = Dic
 
     message = nonce * url * body
     signature = Nettle.hexdigest("sha256", credential.secret_key, message)
-    method == Methods.GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
-    method == Methods.POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
+
+    headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature)
+    if body == ""
+        return make_http_request(method, url, headers = headers)
+    else
+        return make_http_request(method, url, headers = headers, body = body)
+    end
 end
 
 export ChannelType
