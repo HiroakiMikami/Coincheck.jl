@@ -23,7 +23,7 @@ function call_public_api(path, args = Nullable())
     call_public_api(default_client, path, args)
 end
 function call_public_api(client :: Client, path, args = Nullable())
-    response = make_http_request(Methods.GET, convert_to_url(client, path, args))
+    response = HttpUtil.make_http_request(Methods.GET, HttpUtil.convert_to_url(client, path, args))
     JSON.parse(response.body)
 end
 
@@ -35,7 +35,7 @@ function call_private_api(client :: Client, credential, method, path, args = Nul
     # nonce
     nonce = string(UInt64(Dates.time() * 1e6))
     # url
-    url = (method == Methods.GET) ? convert_to_url(client, path, args) : convert_to_url(client, path)
+    url = HttpUtil.convert_to_url(client, path, (method == Methods.GET) ? args : Nullable())
     # body
     body = (method == Methods.GET) ? "" : JSON.json(args)
 
@@ -44,9 +44,9 @@ function call_private_api(client :: Client, credential, method, path, args = Nul
 
     headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature)
     if body == ""
-        return make_http_request(method, url, headers = headers)
+        return HttpUtil.make_http_request(method, url, headers = headers)
     else
-        return make_http_request(method, url, headers = headers, body = body)
+        return HttpUtil.make_http_request(method, url, headers = headers, body = body)
     end
 end
 

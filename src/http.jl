@@ -1,3 +1,9 @@
+module HttpUtil
+
+using ..Coincheck
+using ..Methods
+using HTTP
+
 function make_http_request(method, url; headers = Nullable(), body = Nullable())
     if method == Coincheck.Methods.GET
         if isnull(headers) && isnull(body)
@@ -24,4 +30,6 @@ function convert_to_url(client:: Client, path, args = Nullable())
         query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
         return "$(client.endpoint)/$path?$query"
     end
+end
+
 end
