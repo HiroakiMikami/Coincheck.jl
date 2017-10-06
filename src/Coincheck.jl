@@ -42,11 +42,8 @@ function call_private_api(client :: Client, credential, method, path, args = Nul
     signature = Nettle.hexdigest("sha256", credential.secret_key, message)
 
     headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature)
-    if body == ""
-        return HttpUtil.make_http_request(method, url, headers = headers)
-    else
-        return HttpUtil.make_http_request(method, url, headers = headers, body = body)
-    end
+    response = (body == "") ? HttpUtil.make_http_request(method, url, headers = headers) : HttpUtil.make_http_request(method, url, headers = headers, body = body)
+    return JSON.parse(response.body)
 end
 
 on_text(handler:: WebsocketApiHandler, s:: String) = begin
