@@ -1,6 +1,5 @@
 module Coincheck
 
-using HTTP
 using JSON
 using Nettle
 using WebSocketClient
