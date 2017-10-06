@@ -9,7 +9,7 @@ using HTTP
         req.uri == HTTP.URI("/failure") && return HTTP.Response("""failure""")
         HTTP.Response("")
     end)
-    client = Coincheck.Client("http://127.0.0.1:8081", "")
+    client = Coincheck.HttpClient("http://127.0.0.1:8081")
 
     try
         @spawn HTTP.serve(server, HTTP.IPv4(127,0,0,1), 8081)
