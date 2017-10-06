@@ -1,15 +1,20 @@
-struct WebsocketApiHandler{F} <: WebSocketHandler
+struct HttpClient
+    endpoint:: String
+end
+export HttpClient
+
+# https://coincheck.com/ja/documents/exchange/api#about
+const default_http_client = HttpClient("https://coincheck.com")
+
+struct WebSocketClient{F} <: WebSocketHandler
+    endpoint:: String
     client:: WSClient
     on_data:: F
 end
-export WebsocketApiHandler
+export WebSocketClient
 
-struct Client
-    endpoint:: String
-    websocket_endpoint:: String
-    websocket_handler:: WebsocketApiHandler
-end
-export Client
+# https://coincheck.com/ja/documents/exchange/api#websocket-overview
+const default_websocket_client = WebSocketClient("wss://ws-api.coincheck.com", WSClient(), x -> println(x))
 
 struct Credential
     access_key:: String

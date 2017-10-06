@@ -23,7 +23,7 @@ function make_http_request(method, url; headers = Nullable(), body = Nullable())
     end
 end
 
-function convert_to_url(client:: Client, path, args = Nullable())
+function convert_to_url(client:: Coincheck.HttpClient, path, args = Nullable())
     if isnull(args)
         return "$(client.endpoint)/$path"
     else

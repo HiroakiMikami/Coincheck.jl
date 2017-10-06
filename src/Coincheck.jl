@@ -8,29 +8,22 @@ import Requests: URI
 
 include("common.jl")
 
-# https://coincheck.com/ja/documents/exchange/api#about
-# https://coincheck.com/ja/documents/exchange/api#websocket-overview
-const default_client = Client(
-    "https://coincheck.com", "wss://ws-api.coincheck.com",
-    WebsocketApiHandler(WSClient(), x -> println(x))
-)
-
 include("HttpUtil.jl")
 
 export call_public_api
 function call_public_api(path, args = Nullable())
-    call_public_api(default_client, path, args)
+    call_public_api(default_http_client, path, args)
 end
-function call_public_api(client :: Client, path, args = Nullable())
+function call_public_api(client :: HttpClient, path, args = Nullable())
     response = HttpUtil.make_http_request(Methods.GET, HttpUtil.convert_to_url(client, path, args))
     JSON.parse(response.body)
 end
 
 export call_private_api
 function call_private_api(credential, method, path, args = Nullable())
-    call_private_api(default_client, credential, method, path, args)
+    call_private_api(default_http_client, credential, method, path, args)
 end
-function call_private_api(client :: Client, credential, method, path, args = Nullable())
+function call_private_api(client :: HttpClient, credential, method, path, args = Nullable())
     # nonce
     nonce = string(UInt64(Dates.time() * 1e6))
     # url
@@ -46,7 +39,7 @@ function call_private_api(client :: Client, credential, method, path, args = Nul
     return JSON.parse(response.body)
 end
 
-on_text(handler:: WebsocketApiHandler, s:: String) = begin
+on_text(handler:: WebSocketClient, s:: String) = begin
     try
         handler.on_data(JSON.parse(s))
     catch ex
@@ -55,16 +48,16 @@ on_text(handler:: WebsocketApiHandler, s:: String) = begin
     end
 end
 function subscribe(channels)
-    subscribe(default_client, channels)
+    subscribe(default_websocket_client, channels)
 end
-function subscribe(client:: Client, channels)
+function subscribe(client:: WebSocketClient, channels)
     # Connect to Coincheck server
-    wsconnect(client.websocket_handler.client, URI(client.websocket_endpoint), client.websocket_handler)
+    wsconnect(client.client, URI(client.endpoint), client)
 
     # Make requests
     for channel = collect(channels)
         json = JSON.json(Dict("type" => "subscribe", "channel" => channel))
-        send_text(client.websocket_handler.client, json)
+        send_text(client.client, json)
     end
 end
 
