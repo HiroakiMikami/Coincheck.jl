@@ -16,7 +16,7 @@ const default_client = Client(
     WebsocketApiHandler(WSClient(), Channel{Array{Any, 1}}(32))
 )
 
-include("http.jl")
+include("HttpUtil.jl")
 
 export call_public_api
 function call_public_api(path, args = Nullable())
