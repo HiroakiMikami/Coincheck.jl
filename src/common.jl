@@ -26,4 +26,4 @@ module Methods
     @enum Method GET POST
     export Method
 end
-export Mehotds
+export Methods
