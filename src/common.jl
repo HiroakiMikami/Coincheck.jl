@@ -1,6 +1,6 @@
-struct WebsocketApiHandler <: WebSocketHandler
+struct WebsocketApiHandler{F} <: WebSocketHandler
     client:: WSClient
-    data:: Base.Channel{Array{Any, 1}}
+    on_data:: F
 end
 export WebsocketApiHandler
 

@@ -12,7 +12,7 @@ include("common.jl")
 # https://coincheck.com/ja/documents/exchange/api#websocket-overview
 const default_client = Client(
     "https://coincheck.com", "wss://ws-api.coincheck.com",
-    WebsocketApiHandler(WSClient(), Channel{Array{Any, 1}}(32))
+    WebsocketApiHandler(WSClient(), x -> println(x))
 )
 
 include("HttpUtil.jl")
@@ -48,7 +48,7 @@ end
 
 on_text(handler:: WebsocketApiHandler, s:: String) = begin
     try
-        put!(handler.data, JSON.parse(s))
+        handler.on_data(JSON.parse(s))
     catch ex
         # TODO error-handling
         println(ex)
