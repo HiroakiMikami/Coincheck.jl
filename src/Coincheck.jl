@@ -1,111 +1,64 @@
 module Coincheck
 
-using HTTP
 using JSON
 using Nettle
 using WebSocketClient
 import WebSocketClient: on_text
 import Requests: URI
 
-struct Client
-    endpoint:: String
-    websocket_endpoint:: String
-end
+include("common.jl")
 
-# https://coincheck.com/ja/documents/exchange/api#about
-# https://coincheck.com/ja/documents/exchange/api#websocket-overview
-default_client = Client("https://coincheck.com", "wss://ws-api.coincheck.com")
-
-function get(client :: Client, path, args)
-    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-
-    HTTP.get("$(client.endpoint)/$path?$query")
-end
+include("HttpUtil.jl")
 
 export call_public_api
-function call_public_api(path, args = Dict())
-    call_public_api(default_client, path, args)
+function call_public_api(path, args = Nullable())
+    call_public_api(default_http_client, path, args)
 end
-function call_public_api(client :: Client, path, args = Dict())
-    JSON.parse(get(client, path, args).body)
-end
-
-@enum Method GET POST
-export Method
-
-struct Credential
-    api_key:: String
-    api_secret:: String
+function call_public_api(client :: HttpClient, path, args = Nullable())
+    response = HttpUtil.make_http_request(Methods.GET, HttpUtil.convert_to_url(client, path, args))
+    JSON.parse(response.body)
 end
 
 export call_private_api
-function call_private_api(client :: Client, credential, method, path, args = Dict())
+function call_private_api(credential, method, path, args = Nullable())
+    call_private_api(default_http_client, credential, method, path, args)
+end
+function call_private_api(client :: HttpClient, credential, method, path, args = Nullable())
     # nonce
     nonce = string(UInt64(Dates.time() * 1e6))
     # url
-    query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-    url = (method == GET) ? "$(client.endpoint)/$path$(query == "" ? "" : "?$query")" : "$(client.endpoint)/$path"
+    url = HttpUtil.convert_to_url(client, path, (method == Methods.GET) ? args : Nullable())
     # body
-    body = (method == GET) ? "" : JSON.json(args)
+    body = (method == Methods.GET) ? "" : JSON.json(args)
 
     message = nonce * url * body
-    signature = Nettle.hexdigest("sha256", credential.api_secret, message)
-    method == GET &&  return HTTP.get(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature))
-    method == POST && return HTTP.post(url, headers = Dict{String, String}("ACCESS-KEY" => credential.api_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature), body = body)
+    signature = Nettle.hexdigest("sha256", credential.secret_key, message)
+
+    headers = Dict{String, String}("ACCESS-KEY" => credential.access_key, "ACCESS-NONCE" => nonce, "ACCESS-SIGNATURE" => signature)
+    response = (body == "") ? HttpUtil.make_http_request(method, url, headers = headers) : HttpUtil.make_http_request(method, url, headers = headers, body = body)
+    return JSON.parse(response.body)
 end
 
-export ChannelType
-@enum ChannelType TRADES ORDERBOOK
-
-export Channel
-struct Channel
-    channel_type:: ChannelType
-    pair:: String
-end
-
-function stringify(channel :: Channel)
-    channel.channel_type == TRADES && return "$(channel.pair)-trades"
-    channel.channel_type == ORDERBOOK && return "$(channel.pair)-orderbook"
-end
-
-struct CoincheckApiHandler <: WebSocketHandler
-    client:: WSClient
-    data:: Base.Channel{Tuple{Channel, Array{Any, 1}}}
-end
-on_text(handler ::CoincheckApiHandler, s:: String) = begin
+on_text(handler:: WebSocketClient, s:: String) = begin
     try
-        data = JSON.parse(s)
-
-        if size(data)[1] > 0
-            if isa(data[1], Number)
-                put!(handler.data, (Channel(TRADES, data[2]), data))
-            else
-                put!(handler.data, (Channel(ORDERBOOK, data[1]), data))
-            end
-        end
+        handler.on_data(JSON.parse(s))
     catch ex
         # TODO error-handling
         println(ex)
     end
 end
-
-export subscribe
 function subscribe(channels)
-    subscribe(default_client, channels)
+    subscribe(default_websocket_client, channels)
 end
-function subscribe(client :: Client, channels)
-    handler = CoincheckApiHandler(WSClient(), Base.Channel{Tuple{Channel, Array{Any, 1}}}(32))
-
+function subscribe(client:: WebSocketClient, channels)
     # Connect to Coincheck server
-    wsconnect(handler.client, URI(client.websocket_endpoint), handler)
+    wsconnect(client.client, URI(client.endpoint), client)
 
     # Make requests
     for channel = collect(channels)
-        json = JSON.json(Dict("type" => "subscribe", "channel" => stringify(channel)))
-        send_text(handler.client, json)
+        json = JSON.json(Dict("type" => "subscribe", "channel" => channel))
+        send_text(client.client, json)
     end
-
-    return handler
 end
 
 end
