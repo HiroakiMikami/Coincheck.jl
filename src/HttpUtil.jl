@@ -24,12 +24,12 @@ function make_http_request(method, url; headers = Nullable(), body = Nullable())
     end
 end
 
-function convert_to_url(client:: Coincheck.HttpClient, path, args = Nullable())
+function convert_to_url(endpoint, path, args = Nullable())
     if isnull(args)
-        return "$(client.endpoint)/$path"
+        return "$(endpoint)/$path"
     else
         query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-        return "$(client.endpoint)/$path?$query"
+        return "$(endpoint)/$path?$query"
     end
 end
 
