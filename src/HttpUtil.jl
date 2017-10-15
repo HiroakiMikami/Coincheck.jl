@@ -7,12 +7,13 @@ using HTTP
 function make_http_request(method, url; headers = Nullable(), body = Nullable())
     if method == Coincheck.Methods.GET
         if isnull(headers) && isnull(body)
-            HTTP.get(url)
+            return HTTP.get(url)
         else
             return HTTP.get(url, headers = headers)
         end
     elseif method == Coincheck.Methods.POST
         if isnull(headers) && isnull(body)
+            return HTTP.post(url)
         elseif isnull(headers)
             return HTTP.post(url, headers = headers)
         elseif isnull(body)
