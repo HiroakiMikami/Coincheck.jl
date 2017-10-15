@@ -37,20 +37,35 @@ end
 export call_http_api
 
 on_text(handler:: WebSocketClient, s:: String) = begin
+    println("foo")
     try
-        handler.on_data(JSON.parse(s))
+        for x in handler.callbacks
+            x[2](JSON.parse(s))
+        end
     catch ex
         # TODO error-handling
         println(ex)
     end
 end
-function subscribe(channels)
-    subscribe(default_websocket_client, channels)
-end
-function subscribe(client:: WebSocketClient, channels)
+function connect(client:: WebSocketClient)
     # Connect to Coincheck server
     wsconnect(client.client, URI(client.endpoint), client)
-
+end
+function consume!(callback:: Function, client:: WebSocketClient)
+    while true
+        id = rand(0:UInt64(1) << 63)
+        if !haskey(client.callbacks, id)
+            client.callbacks[id] = callback
+            return id
+        end
+    end
+end
+function delete!(id:: UInt64, client:: WebSocketClient)
+    if haskey(client.callbacks, id)
+        Base.delete!(client.callbacks, id)
+    end
+end
+function subscribe(client:: WebSocketClient, channels)
     # Make requests
     for channel = collect(channels)
         json = JSON.json(Dict("type" => "subscribe", "channel" => channel))
