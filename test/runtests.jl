@@ -14,8 +14,8 @@ using HTTP
     try
         @spawn HTTP.serve(server, HTTP.IPv4(127,0,0,1), 8081)
 
-        @test Coincheck.call_public_api(client, "success") == Dict("success" => true)
-        @test_throws ErrorException Coincheck.call_public_api(client, "failure")
+        @test Coincheck.call_http_api(client, "success") == Dict("success" => true)
+        @test_throws ErrorException Coincheck.call_http_api(client, "failure")
     finally
         put!(server.in, HTTP.KILL)
     end
