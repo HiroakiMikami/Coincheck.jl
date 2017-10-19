@@ -28,8 +28,12 @@ function convert_to_url(endpoint, path, args = Nullable())
     if isnull(args)
         return "$(endpoint)/$path"
     else
-        query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-        return "$(endpoint)/$path?$query"
+        if isnull(args)
+            return "$(endpoint)/$path"
+        else
+            query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
+            return "$(endpoint)/$path?$query"
+        end
     end
 end
 
