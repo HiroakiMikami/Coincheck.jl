@@ -3,7 +3,7 @@ using Base.Test
 
 using HTTP
 
-@testset "call_public_api Tests" begin
+@testset "call_http_api Tests" begin
     server = HTTP.Server((req, rep) -> begin
         req.uri == HTTP.URI("/success") && return HTTP.Response("""{"success": true}""")
         req.uri == HTTP.URI("/failure") && return HTTP.Response("""failure""")
