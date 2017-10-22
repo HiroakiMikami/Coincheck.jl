@@ -21,6 +21,16 @@ function make_http_request(method, url; headers = Nullable(), body = Nullable())
         else
             return HTTP.post(url, headers = headers, body = body)
         end
+    elseif method == Coincheck.Methods.DELETE
+        if isnull(headers) && isnull(body)
+            return HTTP.delete(url)
+        elseif isnull(headers)
+            return HTTP.delete(url, headers = headers)
+        elseif isnull(body)
+            return HTTP.delete(url, body = body)
+        else
+            return HTTP.delete(url, headers = headers, body = body)
+        end
     end
 end
 
