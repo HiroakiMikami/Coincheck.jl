@@ -13,7 +13,7 @@ function call_http_api(client:: HttpClient, path; method = Methods.GET, credenti
     # URL
     url = HttpUtil.convert_to_url(client.endpoint, path, (method == Methods.GET) ? args : Nullable())
     # Body
-    body = (method == Methods.GET) ? Nullable() : JSON.json(args)
+    body = (method == Methods.GET || isnull(args)) ? Nullable() : JSON.json(args)
 
     headers = Nullable()
 
