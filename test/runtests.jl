@@ -17,7 +17,7 @@ using HTTP
         @test Coincheck.call_http_api(client, "success") == Dict("success" => true)
         @test_throws ErrorException Coincheck.call_http_api(client, "failure")
     finally
-        put!(server.in, HTTP.KILL)
+        put!(server.in, 9)
     end
 
 end
