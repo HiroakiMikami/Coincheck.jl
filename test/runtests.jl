@@ -3,6 +3,15 @@ using Base.Test
 
 using HTTP
 
+@testset "HttpUtil" begin
+    importall Coincheck.HttpUtil
+    @test convert_to_url("http://localhost", "foo") == "http://localhost/foo"
+    @test convert_to_url("http://localhost", "foo", Dict("one" => 1, "two" => 2)) == "http://localhost/foo?two=2&one=1"
+    @test convert_to_url("http://localhost/", "foo") == "http://localhost/foo"
+    @test convert_to_url("http://localhost", "/foo") == "http://localhost/foo"
+    @test convert_to_url("http://localhost", "foo/") == "http://localhost/foo"
+end
+
 @testset "call_http_api Tests" begin
     server = HTTP.Server((req, rep) -> begin
         req.uri == HTTP.URI("/success") && return HTTP.Response("""{"success": true}""")

@@ -22,18 +22,19 @@ function make_http_request(method, url; headers = Nullable(), body = Nullable())
         make_request(url, headers = headers, body = body)
     end
 end
+export make_http_request
 
 function convert_to_url(endpoint, path, args = Nullable())
+    _endpoint = isdirpath(endpoint) ? dirname(endpoint) : endpoint
+    _path = isdirpath(path) ? dirname(path) : path
+    _path = isabspath(_path) ? _path[2:_path.len] : _path
     if isnull(args)
-        return "$(endpoint)/$path"
+        return "$_endpoint/$_path"
     else
-        if isnull(args)
-            return "$(endpoint)/$path"
-        else
-            query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
-            return "$(endpoint)/$path?$query"
-        end
+        query = join(map(arg -> "$(arg[1])=$(arg[2])", collect(args)), "&")
+        return "$_endpoint/$_path?$query"
     end
 end
+export convert_to_url
 
 end
